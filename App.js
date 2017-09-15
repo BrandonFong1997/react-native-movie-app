@@ -1,5 +1,5 @@
 import React from 'react';
-import { AppRegistry, Component, Image, StyleSheet, Text, View } from 'react-native';
+import { AppRegistry, Component, Image, ListView, StyleSheet, Text, View } from 'react-native';
 
 var MOCKED_MOVIES_DATA = [
   {title: 'Title', year: '2015', posters: {thumbnail: 'http://i.imgur.com/UePbdph.jpg'}},
@@ -30,38 +30,50 @@ var styles = StyleSheet.create({
   year: {
     textAlign: 'center',
   },
+  listView: {
+    paddingTop: 20, backgroundColor: '#F5FCFF',
+  },
 });
 
 export default class App extends React.Component {
   constructor(props) {
-    super(props);
-    this.state = {
-      movies: null,
-    };
-  }
+  super(props);
+  this.state = {
+    dataSource: new ListView.DataSource({
+      rowHasChanged: (row1, row2) => row1 !== row2,
+    }),
+    loaded: false,
+  };
+}
 
   componentDidMount() {
     this.fetchData();
   }
 
   fetchData() {
-    fetch(REQUEST_URL)
-      .then((response) => response.json())
-      .then((responseData) => {
-        this.setState({
-          movies: responseData.movies,
-        });
-      })
-      .done();
-    }
+  fetch(REQUEST_URL)
+    .then((response) => response.json())
+    .then((responseData) => {
+      this.setState({
+        dataSource: this.state.dataSource.cloneWithRows(responseData.movies),
+        loaded: true,
+      });
+    })
+    .done();
+}
 
   render() {
-    if (!this.state.movies) {
-      return this.renderLoadingView();
-    }
+  if (!this.state.loaded) {
+    return this.renderLoadingView();
+  }
 
-    var movie = this.state.movies[0];
-    return this.renderMovie(movie);
+  return (
+    <ListView
+      dataSource={this.state.dataSource}
+      renderRow={this.renderMovie}
+      style={styles.listView}
+    />
+  );
   }
 
   renderLoadingView() {
